@@ -1,6 +1,7 @@
 import gwpy
 from datetime import datetime
 
+
 def build_table(
     latex: str,
     caption: str,
@@ -29,12 +30,14 @@ def build_table(
 
     return latex
 
+
 def time_to_gwtc_event(time):
     """
     Convert a gpstime to a GWTC event-like name
     """
     dt = gwpy.time.from_gps(time)
     return dt.strftime("GW%y%m%d_%H%M%S")
+
 
 def gwtc_event_to_time(event):
     """
@@ -45,6 +48,9 @@ def gwtc_event_to_time(event):
     gpstime = gwpy.time.to_gps(date)
     return gpstime
 
+
 def filter_lal_warnings():
     import warnings
+    warnings.filterwarnings("ignore", "SyntaxWarning")
+    warnings.filterwarnings("ignore", "UserWarning")
     warnings.filterwarnings("ignore", "Wswiglal-redir-stdio")

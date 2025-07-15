@@ -26,6 +26,7 @@ dependencies = [
     "num2tex>=0.8",
     "bokeh>=3.7.2",
     "selenium>=4.32.0",
+    "zenodo-get>=2.0.0",
 ]
 
 [dependency-groups]
@@ -51,7 +52,7 @@ line-length = 79
 [tool.ruff.lint]
 mccabe = {"max-complexity" = 18}
 select = ["B", "C", "E", "F", "W",  "B9"]
-ignore = ["W605", "E203"]  # ignore for consistency with black
+ignore = ["W605", "E203", "E501"]  # ignore for consistency with black
 
 # ignore asterisk imports and unused
 # import errors in __init__ files

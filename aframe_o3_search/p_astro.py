@@ -1,10 +1,10 @@
 from p_astro.background import KdeAndPolynomialBackground
 from p_astro.foreground import KdeForeground
 from p_astro.p_astro import Pastro
-import aframe_o3_offline.constants as c
+import aframe_o3_search.constants as c
 import pickle
-from pathlib import Path
 import logging
+
 
 def fit_or_load_pastro(
     background,
@@ -14,6 +14,7 @@ def fit_or_load_pastro(
 ):
     p_astro_cache = cache_dir / "pastro.pkl"
     if p_astro_cache.exists():
+        print("loading")
         logging.info("loading cached pastro model")
         with open(p_astro_cache, "rb") as f:
             p_astro = pickle.load(f)
@@ -25,5 +26,3 @@ def fit_or_load_pastro(
         with open(p_astro_cache, "wb") as f:
             pickle.dump(p_astro, f)
     return p_astro
-
-

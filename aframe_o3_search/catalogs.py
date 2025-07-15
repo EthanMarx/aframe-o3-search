@@ -9,12 +9,12 @@ from ledger.events import EventSet
 def build_gwtc3_catalog():
     """
     Query catalog for all events that were detected by a superset of
-    the given interferometers; Add in reported FARs from MF pipelines 
+    the given interferometers; Add in reported FARs from MF pipelines
     """
 
     # query catalog events over O3
-    start = min(datasets.run_segment('O3a_4KHZ_R1'))
-    stop = max(datasets.run_segment('O3b_4KHZ_R1'))
+    start = min(datasets.run_segment("O3a_4KHZ_R1"))
+    stop = max(datasets.run_segment("O3b_4KHZ_R1"))
     events = datasets.query_events(
         select=[f"gps-time >= {start}", f"gps-time <= {stop}"]
     )
@@ -23,7 +23,20 @@ def build_gwtc3_catalog():
 
     # build the catalog of interest
     catalog = defaultdict(list)
-    parameters = ["mass_1_source", "mass_1_source_upper", "mass_1_source_lower", "mass_2_source", "mass_2_source_upper", "mass_2_source_lower", "chirp_mass_source", "luminosity_distance", "redshift", "network_matched_filter_snr", "far", "p_astro"]
+    parameters = [
+        "mass_1_source",
+        "mass_1_source_upper",
+        "mass_1_source_lower",
+        "mass_2_source",
+        "mass_2_source_upper",
+        "mass_2_source_lower",
+        "chirp_mass_source",
+        "luminosity_distance",
+        "redshift",
+        "network_matched_filter_snr",
+        "far",
+        "p_astro",
+    ]
 
     # loop over events and fetch the parameters of interest;
     for event in events:
@@ -32,12 +45,12 @@ def build_gwtc3_catalog():
         catalog_shortname = params["catalog.shortName"]
         if catalog_shortname not in ["GWTC-2.1-confident", "GWTC-3-confident"]:
             continue
-    
+
         # find the ifos that detected the event
         event_ifos = np.unique([s["detector"] for s in params["strain"]])
         catalog["ifos"].append(event_ifos)
         catalog["event"].append(event)
-    
+
         # append the parameters of interest
         # for the event to the master dictonary
         for p in parameters:
@@ -49,14 +62,15 @@ def build_gwtc3_catalog():
         for pipeline in pipelines:
             event = event.split("-")[0]
             try:
-                p_astro=params["parameters"][f"{catalog_shortname}_{pipeline}_{event}"]["p_astro"]
+                p_astro = params["parameters"][
+                    f"{catalog_shortname}_{pipeline}_{event}"
+                ]["p_astro"]
             except KeyError:
                 p_astro = 0.0
             catalog[f"{pipeline}_p_astro"].append(p_astro)
-        
 
     # create a pandas dataframe from the catalog
-    catalog = pd.DataFrame(catalog)    
+    catalog = pd.DataFrame(catalog)
 
     return catalog
 
@@ -65,27 +79,27 @@ def append_cnn_catalog(catalog: pd.DataFrame):
     # read in fars from MF pipelines and merge
     pipeline_catalog = pd.read_csv("./data/mf/o3-catalog-clean.csv")
     pipeline_catalog.replace(np.nan, 1e10, inplace=True)
-    catalog = catalog.merge(pipeline_catalog, on=["event"], how="inner")   
+    catalog = catalog.merge(pipeline_catalog, on=["event"], how="inner")
     catalog.event = [event.split("-")[0] for event in catalog.event]
 
     # read in fars from ccn search and merge
     cnn_catalog = pd.read_csv("./data/cnn-2d-search/events-clean.csv")
     events = cnn_catalog.event.values
-    cnn_analyzed = np.array([event in events for event in catalog.event.values])
-
+    cnn_analyzed = np.array(
+        [event in events for event in catalog.event.values]
+    )
 
     catalog = catalog.merge(cnn_catalog, on=["event"], how="left")
     catalog["cnn_analyzed"] = cnn_analyzed.astype(bool)
-
 
     return catalog
 
 
 def validate_catalog(
-    catalog: pd.DataFrame, 
+    catalog: pd.DataFrame,
     segments: np.ndarray,
     psd_length: float,
-    buffer: float
+    buffer: float,
 ):
     """
     Given a catalog of detections and array of segments
@@ -108,30 +122,29 @@ def validate_catalog(
     # get the start and end times of the segments
     starts, ends = segments.T
 
-  
     # first check if the event was in the segments at all
     mask = (times >= starts) & (times <= ends)
     not_in_segment = ~mask.any(axis=1)
-    
+
     # then check if the event was in psd burn in
-    in_burn_in = ((times - starts < psd_length ) & (times - starts > 0)).any(axis=1)
+    in_burn_in = ((times - starts < psd_length) & (times - starts > 0)).any(
+        axis=1
+    )
 
     # then check if the event was in the end buffer
-    in_last_batch = ((ends - times < buffer) & (ends - times >= 0)).any(axis=1).sum()
-    
+    in_last_batch = (
+        ((ends - times < buffer) & (ends - times >= 0)).any(axis=1).sum()
+    )
+
     # determine of the event was analyzed by aframe
     analyzed = ~not_in_segment & ~in_burn_in & ~in_last_batch
-
-    
-    print(f"Events not in segment: {not_in_segment.sum()}")
-    print(f"Events in PSD burn in: {in_burn_in.sum()}")
-    print(f"Events in last batch: {in_last_batch.sum()}")
 
     catalog["aframe_analyzed"] = analyzed.astype(bool)
     catalog["not_in_segment"] = not_in_segment.astype(bool)
     catalog["in_burn_in"] = in_burn_in.astype(bool)
     catalog["in_last_batch"] = in_last_batch.astype(bool)
     return catalog
+
 
 def append_ares_gw_catalog(catalog: pd.DataFrame):
     pass

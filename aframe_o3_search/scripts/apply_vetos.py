@@ -1,24 +1,22 @@
 """Apply Vetos to Background, Foreground, and 0lag Aframe Events"""
-import logging
-import numpy as np
-import pandas as pd 
-from ledger.events import EventSet, RecoveredInjectionSet
-from gwpy.segments import DataQualityDict, SegmentList
-from aframe_o3_offline.catalogs import validate_catalog, build_gwtc3_catalog, recover
-import aframe_o3_offline.constants as c
-from aframe_o3_offline.utils import filter_lal_warnings
-from gwosc import datasets
-import logging
-from pathlib import Path
-from typing import Dict, List, Literal
 
+import logging
 import numpy as np
+import pandas as pd
+from ledger.events import EventSet, RecoveredInjectionSet
+from gwpy.segments import DataQualityDict, DataQualityFlag, SegmentList, Segment
+import aframe_o3_search.constants as c
+from aframe_o3_search.utils import filter_lal_warnings
 from gwosc import datasets
-from gwpy.segments import DataQualityDict
+from pathlib import Path
+from typing import Dict, List
+from jsonargparse import auto_cli
 
 filter_lal_warnings()
 
-VETO_CATEGORIES = ["CAT1", "CAT2", "GATES", "CATALOG", "GSPY"]
+VETO_CATEGORIES = ["CAT1", "CAT2", "GATES", "CATALOG"] 
+O3A_END = 1253977218
+O3B_START = 1256655618
 
 def gates_to_veto_segments(path: Path):
     """Naively convert gate files to vetos segments"""
@@ -30,7 +28,9 @@ def gates_to_veto_segments(path: Path):
     vetos = np.array(
         [
             [center - window - taper, center + window + taper]
-            for center, window, taper in zip(centers, windows, tapers)
+            for center, window, taper in zip(
+                centers, windows, tapers, strict=False
+            )
         ]
     )
 
@@ -45,6 +45,7 @@ def get_catalog_vetos(start: float, stop: float, delta: float = 1.0):
     vetos = np.column_stack([times - delta, times + delta])
     return vetos
 
+
 class VetoParser:
     def __init__(
         self,
@@ -57,11 +58,31 @@ class VetoParser:
         self.logger = logging.getLogger("vizapp")
         self.vetos = DataQualityDict.from_veto_definer_file(veto_definer_file)
         self.logger.info("Populating vetos")
-        self.vetos.populate(segments=[[start, stop]], verbose=True)
+        #self.vetos.populate(segments=[[start, stop]], verbose=True)
         self.logger.info("Vetos populated")
         self.gate_paths = gate_paths
         self.ifos = ifos
         self.veto_cache = {}
+        self.start = start
+        self.stop = stop
+
+    def get_open_vetos(self, category: str):
+        vetos = {} 
+        for ifo in self.ifos:
+            if category == "GATES":
+                ifo_vetos = gates_to_veto_segments(self.gate_paths[ifo])
+            else:
+                analyzed = SegmentList([Segment(self.start, self.stop)])
+                passed = SegmentList()
+                passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", self.start, O3A_END).active)
+                passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", O3B_START, self.stop).active)
+
+                ifo_vetos = analyzed - passed
+                ifo_vetos = SegmentList([Segment(*x) for x in ifo_vetos])
+
+            vetos[ifo] = np.array(ifo_vetos)
+
+        return vetos
 
     def get_vetos(self, category: str):
         vetos = {}
@@ -87,15 +108,18 @@ class VetoParser:
 
 def main(
     data_dir: Path,
-    outdir: Path,
+    out_dir: Path,
     veto_definer_file: Path,
     gates: Dict[str, Path],
 ):
-    logging.basicConfig()
-    logger = logging.getLogger('apply_vetos')
+    log_format = "%(levelname)s - %(message)s"
+    logging.basicConfig(format=log_format)
+    logger = logging.getLogger("apply_vetos")
     logger.setLevel(logging.INFO)
 
-    # read in background, foreground, rejected parameters 
+    out_dir.mkdir(exist_ok=True, parents=True)
+    
+    # read in background, foreground, rejected parameters
     # and 0lag triggers from aframe
     logger.info("Reading in background foreground and 0lag triggers")
     background = EventSet.read(data_dir / "background.hdf5")
@@ -111,7 +135,7 @@ def main(
     # append test segments to training segments
     segments.extend(test_segments)
     # evaluate livetime before and after coalescing segments;
-    # the two livetimes should be equal 
+    # the two livetimes should be equal
     livetime = np.sum([seg.end - seg.start for seg in segments])
     logger.info(f"Total livetime before coalescing segments: {livetime}")
     segments.coalesce()
@@ -122,7 +146,10 @@ def main(
     zero_lag.append(zero_lag_train)
 
     logger.info("Parsing vetos")
-    start, stop = background.detection_time.min(), background.detection_time.max()
+    start, stop = (
+        background.detection_time.min(),
+        background.detection_time.max(),
+    )
     veto_parser = VetoParser(veto_definer_file, gates, start, stop, c.IFOS)
     catalog_vetos = get_catalog_vetos(start, stop)
 
@@ -130,21 +157,14 @@ def main(
     logger.info(f"{len(foreground)} foreground events before vetos")
     logger.info(f"{len(zero_lag)} zero-lag events before vetos")
     for cat in VETO_CATEGORIES:
-
         for i, ifo in enumerate(c.IFOS):
-
-            print(f"Applying vetos for {cat} to {ifo}")
-            logging.info(f"Applying vetos for {cat} to {ifo}")
+            logger.info(f"Applying vetos for {cat} to {ifo}")
             if cat == "CATALOG":
                 vetos = catalog_vetos
-            elif cat == "GSPY":
-                data = pd.read_csv(f"/home/ethan.marx/projects/aframe-o3-offline/gravityspy/Data/O3_{ifo}.csv")
-                data = data[data.label != "Chirp"]
-                data = data[data.label != "No_Glitch"]
-                data = data[data.confidence > 0.99]
-                vetos = np.column_stack([data.GPStime.values - 0.5, data.GPStime.values + 0.5])
             else:
-                vetos = veto_parser.get_vetos(cat)[ifo]
+                #vetos = veto_parser.get_vetos(cat)[ifo]
+                vetos = veto_parser.get_open_vetos(cat)[ifo]
+            
             # remove veto times from segments
             # for calculating livetime
             segments -= SegmentList(vetos)
@@ -153,9 +173,8 @@ def main(
             background_count = len(background)
             zero_lag_count = len(zero_lag)
 
-
             if len(vetos) > 0:
-                #background = background.apply_vetos(vetos, i, chunk_size=1000)
+                background = background.apply_vetos(vetos, i, chunk_size=1000)
                 foreground = foreground.apply_vetos(vetos, i, chunk_size=1000)
                 if cat != "CATALOG":
                     zero_lag = zero_lag.apply_vetos(vetos, i, chunk_size=1000)
@@ -175,7 +194,7 @@ def main(
     # calculate livetime after removing vetos
     segments.coalesce()
     livetime = np.sum([seg.end - seg.start for seg in segments])
-    np.savetxt(outdir / "livetime_postveto.txt", np.array([livetime]))
+    np.savetxt(out_dir / "livetime_postveto.txt", np.array([livetime]))
     logger.info(f"Total livetime after removing vetod times: {livetime}")
 
     logger.info(f"{len(background)} background events after vetos")
@@ -183,15 +202,11 @@ def main(
     logger.info(f"{len(zero_lag)} zero-lag events after vetos")
 
     logger.info("Writing trigger files")
-    #background = background.sort_by("detection_statistic")
-    foreground.write(outdir /"foreground.hdf5")
-    #background.write(outdir / "background.hdf5")
-    zero_lag.write(outdir /  "0lag.hdf5")
+    background = background.sort_by("detection_statistic")
+    foreground.write(out_dir / "foreground.hdf5")
+    background.write(out_dir / "background.hdf5")
+    zero_lag.write(out_dir / "0lag.hdf5")
+
 
 if __name__ == "__main__":
-    veto_definer_file = "/home/ethan.marx/projects/aframe-o3-offline//aframev2/projects/plots/plots/vetos/H1L1-HOFT_C01_O3_CBC.xml"
-    gates = {ifo: f"/home/ethan.marx/projects/aframe-o3-offline//aframev2/projects/plots/plots/vetos/{ifo}-O3_GATES_1238166018-31197600.txt" for ifo in c.IFOS}
-    data_dir = Path("/home/ethan.marx/projects/aframe-o3-offline/data/aframe")
-    outdir = data_dir / "vetoed-gspy"
-    outdir.mkdir(exist_ok=True, parents=True)
-    main(data_dir, outdir, veto_definer_file, gates)
+    auto_cli(main, as_positional=False) 
