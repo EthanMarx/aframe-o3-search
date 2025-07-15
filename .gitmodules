@@ -1,0 +1,3 @@
+[submodule "aframev2"]
+	path = aframev2
+	url = git@github.com:EthanMarx/aframev2.git
