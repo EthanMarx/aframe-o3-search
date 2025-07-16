@@ -447,10 +447,10 @@ def main(
         latex_non_sig, non_sig_caption, non_sig_label, len(columns)
     )
 
-    with open(table_dir / "significant.tex", "w") as f:
+    with open(table_dir / "table1.tex", "w") as f:
         f.write(latex_sig)
 
-    with open(table_dir / "non_significant.tex", "w") as f:
+    with open(table_dir / "table2.tex", "w") as f:
         f.write(latex_non_sig)
 
 
