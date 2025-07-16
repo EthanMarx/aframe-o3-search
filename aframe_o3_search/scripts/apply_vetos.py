@@ -45,71 +45,35 @@ def get_catalog_vetos(start: float, stop: float, delta: float = 1.0):
     vetos = np.column_stack([times - delta, times + delta])
     return vetos
 
+def get_open_vetos(category: str, ifo: str, start: float, stop: float):
+    analyzed = SegmentList([Segment(start, stop)])
+    passed = SegmentList()
+    passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", start, O3A_END).active)
+    passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", O3B_START, stop).active)
 
-class VetoParser:
-    def __init__(
-        self,
-        veto_definer_file: Path,
-        gate_paths: Dict[str, Path],
-        start: float,
-        stop: float,
-        ifos: List[str],
-    ):
-        self.logger = logging.getLogger("vizapp")
-        self.vetos = DataQualityDict.from_veto_definer_file(veto_definer_file)
-        self.logger.info("Populating vetos")
-        #self.vetos.populate(segments=[[start, stop]], verbose=True)
-        self.logger.info("Vetos populated")
-        self.gate_paths = gate_paths
-        self.ifos = ifos
-        self.veto_cache = {}
-        self.start = start
-        self.stop = stop
+    vetos = analyzed - passed
+    vetos = SegmentList([Segment(*x) for x in vetos])
 
-    def get_open_vetos(self, category: str):
-        vetos = {} 
-        for ifo in self.ifos:
-            if category == "GATES":
-                ifo_vetos = gates_to_veto_segments(self.gate_paths[ifo])
-            else:
-                analyzed = SegmentList([Segment(self.start, self.stop)])
-                passed = SegmentList()
-                passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", self.start, O3A_END).active)
-                passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", O3B_START, self.stop).active)
+    return np.array(vetos) 
 
-                ifo_vetos = analyzed - passed
-                ifo_vetos = SegmentList([Segment(*x) for x in ifo_vetos])
-
-            vetos[ifo] = np.array(ifo_vetos)
-
-        return vetos
-
-    def get_vetos(self, category: str):
-        vetos = {}
-
-        for ifo in self.ifos:
-            if category == "GATES":
-                ifo_vetos = gates_to_veto_segments(self.gate_paths[ifo])
-            else:
-                cat_number = int(category[-1])
-                ifo_vetos = DataQualityDict(
-                    {
-                        k: v
-                        for k, v in self.vetos.items()
-                        if v.ifo == ifo and v.category == cat_number
-                    }
-                )
-                ifo_vetos = ifo_vetos.union().active
-
-            vetos[ifo] = np.array(ifo_vetos)
-
-        return vetos
-
+def get_vetos(
+    category: str, 
+    ifo: str,
+    start: float,
+    stop: float,
+    gates: dict[str, Path]
+):
+    if category == "CAT":
+        vetos = get_catalog_vetos(start, stop)
+    elif category == "GATES":
+        vetos = gates_to_veto_segments(gates[ifo])
+    else:
+        vetos = get_open_vetos(category, ifo, start, stop)
+    return vetos
 
 def main(
     data_dir: Path,
     out_dir: Path,
-    veto_definer_file: Path,
     gates: Dict[str, Path],
 ):
     log_format = "%(levelname)s - %(message)s"
@@ -150,8 +114,6 @@ def main(
         background.detection_time.min(),
         background.detection_time.max(),
     )
-    veto_parser = VetoParser(veto_definer_file, gates, start, stop, c.IFOS)
-    catalog_vetos = get_catalog_vetos(start, stop)
 
     logger.info(f"{len(background)} background events before vetos")
     logger.info(f"{len(foreground)} foreground events before vetos")
@@ -159,11 +121,7 @@ def main(
     for cat in VETO_CATEGORIES:
         for i, ifo in enumerate(c.IFOS):
             logger.info(f"Applying vetos for {cat} to {ifo}")
-            if cat == "CATALOG":
-                vetos = catalog_vetos
-            else:
-                #vetos = veto_parser.get_vetos(cat)[ifo]
-                vetos = veto_parser.get_open_vetos(cat)[ifo]
+            vetos = get_vetos(cat, ifo, start, stop, gates) 
             
             # remove veto times from segments
             # for calculating livetime

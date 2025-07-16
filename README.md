@@ -36,3 +36,26 @@ running them in order is important.
 ```
 bash run.sh
 ```
+
+## Reading Data
+
+The trigger files are stored in hdf5 format. If you have installed this project as described above, 
+you'll have access to python classes for easily working with the data:
+
+```python
+from ledger.events import EventSet, RecoveredInjectionSet
+
+# triggers from the actual search
+zero_lag = EventSet.read("./data/aframe/post_veto/0lag.hdf5")
+
+# have access to properties of events, e.g.
+zero_lag.detection_time, zero_lag.detection_statistic 
+
+# set of injections used to evaluate aframe sensitivity
+foreground = RecoveredInjectionSet.read("./data/aframe/post_veto/foreground.hdf5")
+
+# noise events accumulated through timeslide,s and used to evaluate FAR of events
+background = EventSet.read("./data/aframe/post_veto/background.hdf5")
+```
+
+Otherwise, these files can be opened with e.g. `h5py`

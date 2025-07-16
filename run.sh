@@ -4,12 +4,11 @@
 zenodo_get -g '*GATES*' 5636795 --output-dir ./data/gates/
 
 # query aframe triggers, background, and injection recovery datacw
-#zenodo_get --output-dir ./data/aframe/pre_veto
+zenodo_get 15922679 --output-dir ./data/aframe/pre_veto
 
 # apply vetos to raw trigger files
 python ./aframe_o3_search/scripts/apply_vetos.py \
     --data_dir ./data/aframe/pre_veto --out_dir ./data/aframe/post_veto \
-    --veto_definer_file ./aframe/projects/plots/plots/vetos/H1L1-HOFT_C01_O3_CBC.xml \
     --gates '{"H1" : "./data/gates/H1-O3_GATES_1238166018-31197600.txt", "L1" : "./data/gates/L1-O3_GATES_1238166018-31197600.txt"}'
 
 # create cumulative histogram and pastro plot
