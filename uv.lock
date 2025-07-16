@@ -95,7 +95,7 @@ requires-dist = [
     { name = "ledger", editable = "aframe/libs/ledger" },
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "ml4gw", specifier = ">=0.7.0" },
-    { name = "ml4gw-buoy", specifier = ">=0.2.3" },
+    { name = "ml4gw-buoy", specifier = ">=0.3.0" },
     { name = "num2tex", specifier = ">=0.8" },
     { name = "p-astro", editable = "aframe/libs/p_astro" },
     { name = "pandas", specifier = ">=2.2.2,<3" },
@@ -2414,7 +2414,7 @@ wheels = [
 
 [[package]]
 name = "ml4gw-buoy"
-version = "0.2.3"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "amplfi" },
@@ -2427,9 +2427,9 @@ dependencies = [
     { name = "ml4gw" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9f/c1/0161733fd03dace6bf5dec3c53411453258f85afe89b60d56423192813b0/ml4gw_buoy-0.2.3.tar.gz", hash = "sha256:d7c4f31814fd8d096be1382b54939cd5b69ae78694b347cf31fe0fcd3c226cb2", size = 25184 }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/df/56a9787540f4192354c811faf7191bb3f1b0c8b9246d7102e20534264f3b/ml4gw_buoy-0.3.0.tar.gz", hash = "sha256:f91170f974eab9ba39a4f47b1d7465781d8babfb24d0c2171fedc78001cbc6d3", size = 25041 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/ff/f9be744035a9843637dd5a4a5a006034c5bb67e3e3570b08e8460fb5c597/ml4gw_buoy-0.2.3-py3-none-any.whl", hash = "sha256:0b1da975de211bb2cd6d98a6fb61270444925ae64f5c0610cb1be566ba493296", size = 29801 },
+    { url = "https://files.pythonhosted.org/packages/60/84/b915cc484a0db324e940e9c9a819deadab650bebd724796798bb654ad42f/ml4gw_buoy-0.3.0-py3-none-any.whl", hash = "sha256:9809660a2f0734fe3b92ba90b166d1f693748411695f47f9a7879546776c9dcb", size = 29622 },
 ]
 
 [[package]]
