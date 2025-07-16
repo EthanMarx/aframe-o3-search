@@ -15,7 +15,7 @@ def main(
     outdir: Path,
 ):
     catalog = pd.read_hdf(catalog_path, key="events")
-    mask = catalog["ifos"].apply(lambda x: set(["H1", "L1"]).issubset(x))
+    mask = catalog["ifos"].apply(lambda x: {"H1", "L1"}.issubset(x))
     catalog = catalog[mask]
     non_det = catalog[catalog.aframe_far > c.LOW_SIGNIFICANCE_THRESHOLD]
 

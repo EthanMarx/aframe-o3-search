@@ -245,9 +245,7 @@ def main(
     ]
     ogc = ogc[ogc_columns]
     ogc.rename(
-        columns={
-            ogc: col for ogc, col in zip(ogc_columns, columns, strict=False)
-        },
+        columns=dict(zip(ogc_columns, columns, strict=False)),
         inplace=True,
     )
 
@@ -308,9 +306,7 @@ def main(
     ]
     ares = ares[ares_columns]
     ares.rename(
-        columns={
-            ares: col for ares, col in zip(ares_columns, columns, strict=False)
-        },
+        columns=dict(zip(ares_columns, columns, strict=False)),
         inplace=True,
     )
 
@@ -371,9 +367,7 @@ def main(
     ]
     ias = ias[ias_columns]
     ias.rename(
-        columns={
-            ias: col for ias, col in zip(ias_columns, columns, strict=False)
-        },
+        columns=dict(zip(ias_columns, columns, strict=False)),
         inplace=True,
     )
     mask = ias.aframe_p_astro >= 0.5
