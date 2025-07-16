@@ -2,21 +2,21 @@
 
 import logging
 import numpy as np
-import pandas as pd
 from ledger.events import EventSet, RecoveredInjectionSet
-from gwpy.segments import DataQualityDict, DataQualityFlag, SegmentList, Segment
+from gwpy.segments import DataQualityFlag, SegmentList, Segment
 import aframe_o3_search.constants as c
 from aframe_o3_search.utils import filter_lal_warnings
 from gwosc import datasets
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 from jsonargparse import auto_cli
 
 filter_lal_warnings()
 
-VETO_CATEGORIES = ["CAT1", "CAT2", "GATES", "CATALOG"] 
+VETO_CATEGORIES = ["CAT1", "CAT2", "GATES", "CATALOG"]
 O3A_END = 1253977218
 O3B_START = 1256655618
+
 
 def gates_to_veto_segments(path: Path):
     """Naively convert gate files to vetos segments"""
@@ -45,23 +45,29 @@ def get_catalog_vetos(start: float, stop: float, delta: float = 1.0):
     vetos = np.column_stack([times - delta, times + delta])
     return vetos
 
+
 def get_open_vetos(category: str, ifo: str, start: float, stop: float):
     analyzed = SegmentList([Segment(start, stop)])
     passed = SegmentList()
-    passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", start, O3A_END).active)
-    passed.extend(DataQualityFlag.fetch_open_data(f"{ifo}_CBC_{category}", O3B_START, stop).active)
+    passed.extend(
+        DataQualityFlag.fetch_open_data(
+            f"{ifo}_CBC_{category}", start, O3A_END
+        ).active
+    )
+    passed.extend(
+        DataQualityFlag.fetch_open_data(
+            f"{ifo}_CBC_{category}", O3B_START, stop
+        ).active
+    )
 
     vetos = analyzed - passed
     vetos = SegmentList([Segment(*x) for x in vetos])
 
-    return np.array(vetos) 
+    return np.array(vetos)
+
 
 def get_vetos(
-    category: str, 
-    ifo: str,
-    start: float,
-    stop: float,
-    gates: dict[str, Path]
+    category: str, ifo: str, start: float, stop: float, gates: dict[str, Path]
 ):
     if category == "CAT":
         vetos = get_catalog_vetos(start, stop)
@@ -70,6 +76,7 @@ def get_vetos(
     else:
         vetos = get_open_vetos(category, ifo, start, stop)
     return vetos
+
 
 def main(
     data_dir: Path,
@@ -82,7 +89,7 @@ def main(
     logger.setLevel(logging.INFO)
 
     out_dir.mkdir(exist_ok=True, parents=True)
-    
+
     # read in background, foreground, rejected parameters
     # and 0lag triggers from aframe
     logger.info("Reading in background foreground and 0lag triggers")
@@ -121,8 +128,8 @@ def main(
     for cat in VETO_CATEGORIES:
         for i, ifo in enumerate(c.IFOS):
             logger.info(f"Applying vetos for {cat} to {ifo}")
-            vetos = get_vetos(cat, ifo, start, stop, gates) 
-            
+            vetos = get_vetos(cat, ifo, start, stop, gates)
+
             # remove veto times from segments
             # for calculating livetime
             segments -= SegmentList(vetos)
@@ -167,4 +174,4 @@ def main(
 
 
 if __name__ == "__main__":
-    auto_cli(main, as_positional=False) 
+    auto_cli(main, as_positional=False)

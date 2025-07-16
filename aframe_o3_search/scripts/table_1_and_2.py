@@ -22,6 +22,7 @@ from num2tex import num2tex
 from aframe_o3_search.utils import gwtc_event_to_time
 from jsonargparse import auto_cli
 
+
 def add_brackets_to_latex(latex_str):
     latex_str = latex_str.replace("{", "")
     latex_str = latex_str.replace("}", "")
@@ -89,12 +90,12 @@ def main(
     non_significant = pd.DataFrame(columns=columns)
 
     # read in segments analyzed by aframe
-    train_segments = np.loadtxt(segments_dir / "train_segments.txt", dtype=float)[
-        :, 1:3
-    ]
-    test_segments = np.loadtxt(segments_dir / "test_segments.txt", dtype=float)[
-        :, 1:3
-    ]
+    train_segments = np.loadtxt(
+        segments_dir / "train_segments.txt", dtype=float
+    )[:, 1:3]
+    test_segments = np.loadtxt(
+        segments_dir / "test_segments.txt", dtype=float
+    )[:, 1:3]
     segments = np.concatenate([train_segments, test_segments])
 
     # read in background, foreground, rejected parameters
@@ -454,6 +455,5 @@ def main(
         f.write(latex_non_sig)
 
 
-
 if __name__ == "__main__":
-    auto_cli(main, as_positional=False) 
+    auto_cli(main, as_positional=False)

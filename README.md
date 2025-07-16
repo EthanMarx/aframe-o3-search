@@ -3,6 +3,7 @@ Repository for analysis of Aframe's search over the LVK's O3 observing run
 
 If you use or refer to these data products in your work, please cite https://doi.org/10.1103/1v7r-bkzs
 
+See also https://zenodo.org/records/15922679, where the data is made publicly available
 
 ## Repository
 

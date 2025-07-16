@@ -51,6 +51,7 @@ def gwtc_event_to_time(event):
 
 def filter_lal_warnings():
     import warnings
+
     warnings.filterwarnings("ignore", "SyntaxWarning")
     warnings.filterwarnings("ignore", "UserWarning")
     warnings.filterwarnings("ignore", "Wswiglal-redir-stdio")

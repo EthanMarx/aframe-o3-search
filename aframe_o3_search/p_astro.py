@@ -14,7 +14,6 @@ def fit_or_load_pastro(
 ):
     p_astro_cache = cache_dir / "pastro.pkl"
     if p_astro_cache.exists():
-        print("loading")
         logging.info("loading cached pastro model")
         with open(p_astro_cache, "rb") as f:
             p_astro = pickle.load(f)

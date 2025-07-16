@@ -3,7 +3,7 @@ import numpy as np
 from ledger.injections import InjectionParameterSet
 from ledger.events import EventSet, RecoveredInjectionSet
 from aframe_o3_search.p_astro import fit_or_load_pastro
-from aframe_o3_search.utils import filter_lal_warnings 
+from aframe_o3_search.utils import filter_lal_warnings
 import matplotlib.pyplot as plt
 from ledger.events import SECONDS_IN_YEAR
 from pathlib import Path
@@ -28,7 +28,7 @@ def main(
     logger = logging.getLogger("apply_vetos")
     logger.setLevel(logging.INFO)
 
-    logger.info("Reading in background foreground and 0lag triggers") 
+    logger.info("Reading in background foreground and 0lag triggers")
     rejected = InjectionParameterSet.read(rejected_path)
     background = EventSet.read(background_path)
     foreground = RecoveredInjectionSet.read(foreground_path)
