@@ -69,7 +69,7 @@ def get_open_vetos(category: str, ifo: str, start: float, stop: float):
 def get_vetos(
     category: str, ifo: str, start: float, stop: float, gates: dict[str, Path]
 ):
-    if category == "CAT":
+    if category == "CATALOG":
         vetos = get_catalog_vetos(start, stop)
     elif category == "GATES":
         vetos = gates_to_veto_segments(gates[ifo])
