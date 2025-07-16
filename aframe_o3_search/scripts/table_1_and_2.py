@@ -121,11 +121,6 @@ def main(
     catalog["event"] = catalog["event"].apply(lambda x: x.split("-")[0])
     catalog = catalog[catalog["event"] != "GW190916_200658"]
     catalog = catalog[catalog["event"] != "GW190926_050336"]
-    in_burn_in = catalog[catalog.in_burn_in]
-
-    with open(out_dir / "gwtc3-burn-in.txt", "w") as f:
-        for time in in_burn_in.time.values:
-            f.write(f"{time}\n")
 
     logger.info("There are {} events in the catalog".format(len(catalog)))
 
@@ -458,8 +453,6 @@ def main(
     with open(table_dir / "non_significant.tex", "w") as f:
         f.write(latex_non_sig)
 
-    gpstimes = np.array(gpstimes)
-    np.save(out_dir / "gpstimes.npy", gpstimes)
 
 
 if __name__ == "__main__":

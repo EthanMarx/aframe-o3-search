@@ -10,18 +10,20 @@
 #    --gates '{"H1" : "./data/gates/H1-O3_GATES_1238166018-31197600.txt", "L1" : "./data/gates/L1-O3_GATES_1238166018-31197600.txt"}' 
 
 # create cumulative histogram and pastro plot
-#python ./aframe_o3_search/scripts/cumulative_plots.py \
+#python ./aframe_o3_search/scripts/figure_4.py \
 #    --background_path ./data/aframe/post_veto/background.hdf5 \
 #    --foreground_path ./data/aframe/post_veto/foreground.hdf5 \
 #    --rejected_path ./data/aframe/pre_veto/rejected-parameters.hdf5 \
 #    --outdir ./paper/
 
-python ./aframe_o3_search/scripts/make_tables.py \
-    --segments_dir ./data/aframe/pre_veto \
-    --background_path ./data/aframe/post_veto/background.hdf5 \
-    --zero_lag_path ./data/aframe/post_veto/0lag.hdf5 \
-    --foreground_path ./data/aframe/post_veto/foreground.hdf5 \
-    --rejected_path ./data/aframe/pre_veto/rejected-parameters.hdf5 \
-    --pipeline_data_dir ./data/ \
-    --data_dir ./data/aframe/post_veto \
-    --out_dir ./paper/ --recovery_dt 1.0
+#python ./aframe_o3_search/scripts/tables_1_and_2.py \
+#    --segments_dir ./data/aframe/pre_veto \
+#    --background_path ./data/aframe/post_veto/background.hdf5 \
+#    --zero_lag_path ./data/aframe/post_veto/0lag.hdf5 \
+#    --foreground_path ./data/aframe/post_veto/foreground.hdf5 \
+#    --rejected_path ./data/aframe/pre_veto/rejected-parameters.hdf5 \
+#    --pipeline_data_dir ./data/ \
+#    --data_dir ./data/aframe/post_veto \
+#    --out_dir ./paper/ --recovery_dt 1.0
+
+python ./aframe_o3_search/scripts/figure_3.py --catalog_path ./paper/gwtc3.hdf5 --outdir ./paper/
